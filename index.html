@@ -3,240 +3,464 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>每日热量记录 (修复版)</title>
+    <title>健康管理助手 (修复版)</title>
     <style>
-        :root { --primary: #07c160; --bg: #f5f5f5; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #333; }
-        .card { background: #fff; padding: 20px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        h2 { font-size: 18px; margin: 0 0 15px 0; border-left: 4px solid var(--primary); padding-left: 10px; }
-        
-        .input-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; color: #666; font-size: 14px; }
-        input, select { width: 100%; padding: 12px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 8px; background: #fafafa; font-size: 16px; }
-        
-        .btn { width: 100%; padding: 12px; background: var(--primary); color: #fff; border: none; border-radius: 25px; font-size: 16px; font-weight: bold; cursor: pointer; }
-        .btn:active { opacity: 0.8; }
-        
+        :root {
+            --primary: #07c160;
+            --blue: #2196F3;
+            --bg: #F2F3F5;
+            --text-main: #333;
+            --card-bg: #fff;
+        }
+
+        body {
+            font-family: -apple-system, "Helvetica Neue", Helvetica, sans-serif;
+            background-color: var(--bg);
+            margin: 0; padding: 0;
+            color: var(--text-main);
+            min-height: 100vh;
+            /* 居中显示，防止在电脑上太宽 */
+            display: flex; justify-content: center;
+        }
+
+        /* 手机尺寸容器限制 */
+        .app-container {
+            width: 100%;
+            max-width: 480px; /* 限制最大宽度，像App一样 */
+            background: #f7f8fa;
+            min-height: 100vh;
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.05);
+        }
+
+        /* --- 页面 1：设置页 --- */
+        #setup-page {
+            display: flex; flex-direction: column; justify-content: center;
+            min-height: 100vh; padding: 25px; box-sizing: border-box; background: #fff;
+        }
+        .welcome-title { font-size: 26px; font-weight: 800; text-align: center; margin-bottom: 10px; color: #333; }
+        .welcome-sub { text-align: center; color: #999; margin-bottom: 30px; font-size: 14px; }
+
+        label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 8px; color: #555; }
+        input, select {
+            width: 100%; padding: 14px; margin-bottom: 20px;
+            border: 1px solid #eee; border-radius: 12px;
+            background: #f9f9f9; font-size: 16px; box-sizing: border-box;
+            appearance: none; /* 去除原生样式 */
+        }
+        input:focus, select:focus { border-color: var(--primary); background: #fff; outline: none; }
+
+        .btn {
+            width: 100%; padding: 16px; border: none; border-radius: 12px;
+            font-size: 18px; font-weight: bold; cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 10px;
+        }
+        .btn-primary { background: var(--primary); color: #fff; box-shadow: 0 4px 12px rgba(7, 193, 96, 0.3); }
+        .btn:active { transform: scale(0.98); opacity: 0.9; }
+
+        /* --- 页面 2：主界面 --- */
+        #main-page { display: none; padding: 15px; padding-bottom: 60px; }
+
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 0 5px; }
+        .user-info b { font-size: 18px; color: var(--primary); }
+        .edit-btn { background: #e0e0e0; padding: 6px 15px; border-radius: 20px; font-size: 13px; border: none; font-weight: bold; color: #555; cursor: pointer;}
+
+        .card {
+            background: var(--card-bg); border-radius: 16px; padding: 20px;
+            margin-bottom: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        }
+
+        h2 { margin: 0 0 15px 0; font-size: 17px; font-weight: 700; border-left: 4px solid var(--primary); padding-left: 10px; }
+
         /* 仪表盘 */
-        .dashboard { display: flex; justify-content: space-between; text-align: center; margin-bottom: 15px; }
-        .num { font-size: 24px; font-weight: bold; display: block; }
-        .desc { font-size: 12px; color: #999; }
+        .dashboard-grid { display: flex; gap: 12px; margin-bottom: 15px; }
+        .stat-card { flex: 1; background: #fff; padding: 20px 15px; border-radius: 16px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
+        .stat-num { font-size: 28px; font-weight: 800; display: block; margin-bottom: 5px; line-height: 1; }
+        .stat-label { font-size: 13px; color: #999; }
         
+        .progress-box { height: 8px; background: #eee; border-radius: 4px; overflow: hidden; margin-top: 10px; }
+        .progress-bar { height: 100%; transition: width 0.5s; border-radius: 4px; }
+
+        /* 喝水 */
+        .water-row { display: flex; align-items: center; justify-content: space-between; }
+        .water-btn-small { background: #e3f2fd; color: var(--blue); border: none; padding: 10px 20px; border-radius: 25px; font-weight: bold; font-size: 14px; cursor: pointer; }
+
+        /* 智能提示 */
+        .smart-hint { 
+            font-size: 13px; color: var(--primary); 
+            background: #e8f5e9; padding: 8px; 
+            border-radius: 8px; display: none; margin-bottom: 15px; 
+        }
+
         /* 列表 */
-        .list-item { display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #eee; align-items: center; }
-        .del-btn { color: #ccc; padding: 5px 10px; cursor: pointer; }
+        .food-item { display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px dashed #eee; font-size: 16px; align-items: center; }
+        .del-icon { color: #ccc; padding: 5px 10px; font-size: 20px; cursor: pointer; }
         
-        .hint { color: var(--primary); font-size: 12px; margin-top: 5px; min-height: 18px;}
+        .ai-box { background: #fffbe6; padding: 12px; border-radius: 8px; font-size: 14px; color: #856404; margin-bottom: 15px; display: none; line-height: 1.5; border: 1px solid #ffe58f; }
+
+        /* optgroup 样式 */
+        optgroup { font-weight: bold; color: #333; }
     </style>
 </head>
 <body>
 
-    <!-- 身体数据设置 -->
-    <div class="card">
-        <h2>1. 身体设置 (自动保存)</h2>
-        <div class="input-group">
-            <label>身高 (cm) / 体重 (kg) / 年龄</label>
-            <div style="display:flex; gap:10px;">
-                <input type="number" id="height" placeholder="身高" onchange="saveProfile()">
-                <input type="number" id="weight" placeholder="体重" onchange="saveProfile()">
-                <input type="number" id="age" placeholder="年龄" onchange="saveProfile()">
+<div class="app-container">
+    <!-- 🟡 页面 1：设置/引导页 -->
+    <div id="setup-page">
+        <div class="welcome-title">👋 欢迎回来</div>
+        <div class="welcome-sub">填写数据，为你定制专属热量目标</div>
+        
+        <label>身高 (cm)</label>
+        <input type="number" id="height" placeholder="例如: 175">
+
+        <label>体重 (kg)</label>
+        <input type="number" id="weight" placeholder="例如: 70">
+
+        <div style="display: flex; gap:15px;">
+            <div style="flex:1">
+                <label>年龄</label>
+                <input type="number" id="age" placeholder="25">
+            </div>
+            <div style="flex:1">
+                <label>性别</label>
+                <select id="gender">
+                    <option value="male">男</option>
+                    <option value="female">女</option>
+                </select>
             </div>
         </div>
-        <div class="input-group">
-            <label>目标设定</label>
-            <select id="goal" onchange="saveProfile()">
-                <option value="0">保持体重</option>
-                <option value="-300">减脂 (-300大卡)</option>
-                <option value="-500">快速减脂 (-500大卡)</option>
-                <option value="300">增肌 (+300大卡)</option>
+
+        <label>目标</label>
+        <select id="goal">
+            <option value="0">⚖️ 保持体重</option>
+            <option value="-300">📉 减脂 (-300)</option>
+            <option value="-500">🔥 快速减脂 (-500)</option>
+            <option value="300">💪 增肌 (+300)</option>
+        </select>
+        
+        <label>日常活动量</label>
+        <select id="activity">
+            <option value="1.2">😴 久坐不动 (办公室)</option>
+            <option value="1.375">🚶 轻度运动 (每周1-3次)</option>
+            <option value="1.55">🏃 中度运动 (每周3-5次)</option>
+        </select>
+
+        <button class="btn btn-primary" onclick="finishSetup()">进入主页</button>
+    </div>
+
+    <!-- 🟢 页面 2：主界面 -->
+    <div id="main-page">
+        <div class="top-bar">
+            <div class="user-info">BMI: <b id="show-bmi">--</b> <span id="bmi-tag" style="font-size:12px; background:#eee; padding:2px 6px; border-radius:4px; color:#666;">--</span></div>
+            <button class="edit-btn" onclick="goToSetup()">⚙️ 设置数据</button>
+        </div>
+
+        <!-- 仪表盘 -->
+        <div class="dashboard-grid">
+            <div class="stat-card">
+                <span class="stat-label">🔥 还能吃</span>
+                <span class="stat-num" id="val-remaining" style="color:var(--primary)">0</span>
+                <div class="progress-box">
+                    <div id="bar-cal" class="progress-bar" style="width:0%; background:var(--primary)"></div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">💧 已喝水</span>
+                <span class="stat-num" id="val-water" style="color:var(--blue)">0</span>
+                <div class="progress-box">
+                    <div id="bar-water" class="progress-bar" style="width:0%; background:var(--blue)"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 补水按钮 -->
+        <div class="card water-row">
+            <span style="font-weight:bold; color:#555;">💧 补水站</span>
+            <div style="display:flex; gap:10px;">
+                <button class="water-btn-small" onclick="addWater(200)">+200ml</button>
+                <button class="water-btn-small" style="background:#bbdefb; color:#0d47a1" onclick="addWater(500)">+500ml</button>
+            </div>
+        </div>
+
+        <!-- 饮食记录 -->
+        <div class="card">
+            <h2>🥘 饮食记录</h2>
+            
+            <select id="quick-food" onchange="fillFromTemplate()" style="margin-bottom:10px; color:#555;">
+                <option value="">⚡️ 快速选择常见食物...</option>
+                <optgroup label="🍚 主食/早餐">
+                    <option value="米饭:230">米饭 (1碗)</option>
+                    <option value="盖浇饭:750">盖浇饭 (1份)</option>
+                    <option value="肉包子:250">肉包子 (1个)</option>
+                    <option value="燕麦片:150">燕麦片 (1碗)</option>
+                </optgroup>
+                <optgroup label="🥤 饮料/咖啡">
+                    <option value="可乐:140">可乐 (1听)</option>
+                    <option value="拿铁:200">拿铁咖啡</option>
+                    <option value="美式:15">美式咖啡</option>
+                </optgroup>
+                <optgroup label="🍖 蛋白质/肉类">
+                    <option value="鸡蛋:80">水煮蛋 (1个)</option>
+                    <option value="鸡胸肉:130">鸡胸肉 (100g)</option>
+                    <option value="牛排:300">牛排 (1份)</option>
+                </optgroup>
             </select>
-        </div>
-        <div style="text-align:center; font-size:14px; color:#888;">
-            你的目标摄入: <span id="target-display" style="color:#07c160; font-weight:bold;">0</span> kcal
-        </div>
-    </div>
 
-    <!-- 仪表盘 -->
-    <div class="card">
-        <div class="dashboard">
-            <div><span class="num" id="show-consumed">0</span><span class="desc">已吃</span></div>
-            <div><span class="num" id="show-remaining" style="color:#07c160">0</span><span class="desc">还能吃</span></div>
-        </div>
-        <div style="height:10px; background:#eee; border-radius:5px; overflow:hidden;">
-            <div id="progress-bar" style="height:100%; background:#07c160; width:0%;"></div>
-        </div>
-    </div>
+            <input type="text" id="food-name" placeholder="或手动输入 (如: 炸鸡)" oninput="autoMatch()">
+            
+            <div id="smart-hint" class="smart-hint"></div>
 
-    <!-- 记账 -->
-    <div class="card">
-        <h2>2. 饮食记录</h2>
-        <div class="input-group">
-            <input type="text" id="food-name" placeholder="吃了什么？(如: 盖饭)" oninput="autoMatch()">
-            <div id="smart-hint" class="hint"></div>
-            <input type="number" id="food-cal" placeholder="热量 (kcal)" style="margin-top:5px;">
+            <div style="display:flex; gap:10px;">
+                <input type="number" id="food-cal" placeholder="热量 (kcal)" style="margin-bottom:0;">
+                <button class="btn btn-primary" style="width:100px; padding:0; margin:0;" onclick="addFood()">记录</button>
+            </div>
         </div>
-        <button class="btn" onclick="addFood()">添加记录</button>
-        
-        <div id="food-list" style="margin-top:20px;"></div>
-        
-        <button onclick="clearDay()" style="width:100%; margin-top:20px; background:transparent; border:1px solid #ddd; color:#999; padding:10px; border-radius:8px;">清空今日记录</button>
+
+        <!-- AI 建议 -->
+        <div id="ai-advice" class="ai-box"></div>
+
+        <!-- 列表 -->
+        <div class="card">
+            <h2>📝 今日清单</h2>
+            <div id="food-list"></div>
+            <div style="text-align:center; margin-top:15px;">
+                <span onclick="clearDay()" style="color:#999; font-size:13px; text-decoration:underline; cursor:pointer;">清空今日记录</span>
+            </div>
+        </div>
     </div>
+</div>
 
 <script>
-    // --- 核心逻辑 ---
+    // --- 全局变量 ---
+    let user = { height: '', weight: '', age: '', gender: 'male', activity: 1.2, goal: 0 };
+    let data = { consumed: 0, water: 0, foods: [] };
 
-    // 1. 初始化数据结构
-    let userProfile = { height: '', weight: '', age: '', goal: 0 };
-    let dietData = { consumed: 0, foods: [] };
-    
-    // 食物库
+    // --- 数据库 ---
     const foodDB = {
-        "米饭": 230, "盖浇饭": 750, "面": 400, "鸡蛋": 80, 
-        "可乐": 140, "奶茶": 450, "拿铁": 200, "美式": 15,
-        "苹果": 50, "鸡胸肉": 130, "汉堡": 550, "火锅": 1000
+        "米饭": 230, "盖饭": 750, "炒饭": 700, "面": 400, "粉": 450,
+        "鸡蛋": 80, "鸡胸": 130, "牛肉": 200, "猪肉": 300, "鱼": 120,
+        "苹果": 50, "香蕉": 90, "西瓜": 40, "葡萄": 60,
+        "可乐": 140, "雪碧": 150, "奶茶": 450, "拿铁": 200, "美式": 15,
+        "汉堡": 550, "薯条": 350, "炸鸡": 600, "火锅": 1000, "麻辣烫": 600
     };
 
-    // 2. 页面加载时：自动读档
+    const aiRules = [
+        { key: "炸", text: "🚫 炸物热量超高，建议这顿之后吃清淡点。" },
+        { key: "糖", text: "⚠️ 糖分会引起胰岛素波动，容易囤积脂肪。" },
+        { key: "奶茶", text: "⚠️ 一杯奶茶 = 跑步5公里，建议喝无糖的。" },
+        { key: "鸡胸", text: "✅ 优质蛋白，增肌减脂神器！" },
+        { key: "蔬菜", text: "✅ 多吃蔬菜增加饱腹感，很棒！" },
+        { key: "可乐", text: "⚠️ 液体糖最容易胖，换成零度可乐更好。" }
+    ];
+
+    // --- 初始化 ---
     window.onload = function() {
-        loadData();
-    };
+        try {
+            const u = localStorage.getItem('fit_user_v7');
+            const d = localStorage.getItem('fit_data_v7');
+            if(u) user = JSON.parse(u);
+            if(d) data = JSON.parse(d);
 
-    // 3. 读档函数
-    function loadData() {
-        // 读取身体数据
-        const savedProfile = localStorage.getItem('myDietProfile_v3');
-        if (savedProfile) {
-            userProfile = JSON.parse(savedProfile);
-            document.getElementById('height').value = userProfile.height;
-            document.getElementById('weight').value = userProfile.weight;
-            document.getElementById('age').value = userProfile.age;
-            document.getElementById('goal').value = userProfile.goal;
+            // 检查是否有身高体重，如果有，直接进主页
+            if(user.weight && user.height) {
+                showMainPage();
+            } else {
+                goToSetup();
+            }
+        } catch(e) {
+            console.error("加载数据出错", e);
+            goToSetup();
         }
-
-        // 读取饮食记录
-        const savedDiet = localStorage.getItem('myDietData_v3');
-        if (savedDiet) {
-            dietData = JSON.parse(savedDiet);
-        }
-
-        updateUI(); // 刷新界面
     }
 
-    // 4. 存档函数 (任何修改都会调用它)
-    function saveAll() {
-        localStorage.setItem('myDietProfile_v3', JSON.stringify(userProfile));
-        localStorage.setItem('myDietData_v3', JSON.stringify(dietData));
-        updateUI();
+    // --- 流程控制 ---
+    function goToSetup() {
+        document.getElementById('main-page').style.display = 'none';
+        document.getElementById('setup-page').style.display = 'flex';
+        // 回填数据
+        if(user.height) document.getElementById('height').value = user.height;
+        if(user.weight) document.getElementById('weight').value = user.weight;
+        if(user.age) document.getElementById('age').value = user.age;
     }
 
-    // 5. 保存身体设置 & 计算目标
-    function saveProfile() {
-        userProfile.height = document.getElementById('height').value;
-        userProfile.weight = document.getElementById('weight').value;
-        userProfile.age = document.getElementById('age').value;
-        userProfile.goal = document.getElementById('goal').value;
-        saveAll();
-    }
-
-    // 计算 TDEE
-    function calculateTarget() {
-        const h = parseInt(userProfile.height);
-        const w = parseInt(userProfile.weight);
-        const a = parseInt(userProfile.age);
-        if(!h || !w || !a) return 0;
-        
-        // 简化版公式
-        const bmr = (10 * w) + (6.25 * h) - (5 * a) + 5;
-        const tdee = Math.round(bmr * 1.375); // 默认轻度活动
-        return tdee + parseInt(userProfile.goal);
-    }
-
-    // 6. 智能匹配
-    function autoMatch() {
-        const val = document.getElementById('food-name').value;
-        const hintEl = document.getElementById('smart-hint');
-        const calEl = document.getElementById('food-cal');
-        
-        if (!val) { hintEl.innerText = ''; return; }
-
-        for (let key in foodDB) {
-            if (val.includes(key)) {
-                hintEl.innerText = `💡 猜你是: ${key} (${foodDB[key]} kcal)`;
-                if(!calEl.value) calEl.value = foodDB[key];
+    // 🔴 核心：点击“进入主页”按钮
+    function finishSetup() {
+        try {
+            const h = document.getElementById('height').value;
+            const w = document.getElementById('weight').value;
+            const a = document.getElementById('age').value;
+            
+            if(!h || !w) {
+                alert("请输入身高和体重，这是计算热量的基础哦！");
                 return;
             }
+
+            // 保存数据
+            user.height = h;
+            user.weight = w;
+            user.age = a;
+            user.gender = document.getElementById('gender').value;
+            user.activity = document.getElementById('activity').value;
+            user.goal = document.getElementById('goal').value;
+
+            saveData();
+            showMainPage();
+
+        } catch(e) {
+            alert("发生错误: " + e.message);
         }
-        hintEl.innerText = '';
     }
 
-    // 7. 添加食物
+    function showMainPage() {
+        document.getElementById('setup-page').style.display = 'none';
+        document.getElementById('main-page').style.display = 'block';
+        updateUI();
+        window.scrollTo(0, 0);
+    }
+
+    // --- 业务功能 ---
+    function fillFromTemplate() {
+        const val = document.getElementById('quick-food').value;
+        if(val) {
+            const parts = val.split(':');
+            document.getElementById('food-name').value = parts[0];
+            document.getElementById('food-cal').value = parts[1];
+            document.getElementById('smart-hint').style.display = 'none';
+        }
+    }
+
+    function autoMatch() {
+        const val = document.getElementById('food-name').value;
+        const hintBox = document.getElementById('smart-hint');
+        const calInput = document.getElementById('food-cal');
+        
+        if(!val) { hintBox.style.display = 'none'; return; }
+
+        let found = false;
+        for(let key in foodDB) {
+            if(val.includes(key)) {
+                hintBox.innerHTML = `💡 识别到 <b>${key}</b>，预估 <b>${foodDB[key]}</b> kcal`;
+                hintBox.style.display = 'block';
+                if(!calInput.value) calInput.value = foodDB[key];
+                found = true;
+                break;
+            }
+        }
+        if(!found) hintBox.style.display = 'none';
+    }
+
     function addFood() {
         const name = document.getElementById('food-name').value;
         const cal = parseInt(document.getElementById('food-cal').value);
         
-        if(!name || isNaN(cal)) { alert("请输入完整哦"); return; }
+        if(!name || isNaN(cal)) {
+            alert("请填写食物名称和热量");
+            return;
+        }
 
-        dietData.consumed += cal;
-        dietData.foods.unshift({ id: Date.now(), name: name, cal: cal }); // 加到最前面
+        data.consumed += cal;
+        data.foods.unshift({ id: Date.now(), name, cal });
         
-        // 清空输入
+        // AI 建议
+        let advice = "";
+        for(let rule of aiRules) {
+            if(name.includes(rule.key)) { advice = rule.text; break; }
+        }
+        if(!advice) {
+            if(cal > 600) advice = "⚠️ 这顿热量较高，注意全天控制。";
+            else advice = "✅ 已记录，继续保持。";
+        }
+        const box = document.getElementById('ai-advice');
+        box.innerText = advice;
+        box.style.display = 'block';
+
+        // 清理
         document.getElementById('food-name').value = '';
         document.getElementById('food-cal').value = '';
-        document.getElementById('smart-hint').innerText = '';
-        
-        saveAll(); // 立即保存！
+        document.getElementById('smart-hint').style.display = 'none';
+        document.getElementById('quick-food').value = "";
+
+        saveData();
+        updateUI();
     }
 
-    // 8. 删除食物
+    function addWater(ml) {
+        data.water += ml;
+        saveData();
+        updateUI();
+    }
+
     function removeFood(id) {
-        const idx = dietData.foods.findIndex(f => f.id === id);
-        if (idx > -1) {
-            dietData.consumed -= dietData.foods[idx].cal;
-            dietData.foods.splice(idx, 1);
-            saveAll(); // 立即保存！
+        const idx = data.foods.findIndex(f => f.id === id);
+        if(idx > -1) {
+            data.consumed -= data.foods[idx].cal;
+            data.foods.splice(idx, 1);
+            saveData();
+            updateUI();
         }
     }
-    
-    // 9. 清空
+
     function clearDay() {
-        if(confirm("确定清空今天所有记录吗？")) {
-            dietData.consumed = 0;
-            dietData.foods = [];
-            saveAll();
+        if(confirm("确定清空今天所有记录？")) {
+            data.consumed = 0; data.water = 0; data.foods = [];
+            saveData(); updateUI();
+            document.getElementById('ai-advice').style.display = 'none';
         }
     }
 
-    // 10. 界面更新
+    // --- 界面更新与存储 ---
     function updateUI() {
-        const target = calculateTarget();
-        const remaining = target - dietData.consumed;
+        const h = parseInt(user.height);
+        const w = parseInt(user.weight);
+        const a = parseInt(user.age) || 25;
         
-        document.getElementById('target-display').innerText = target;
-        document.getElementById('show-consumed').innerText = dietData.consumed;
+        // 计算指标
+        const bmi = (w/((h/100)*(h/100))).toFixed(1);
+        let bmiStatus = "正常";
+        if(bmi < 18.5) bmiStatus = "偏瘦";
+        if(bmi >= 24) bmiStatus = "超重";
         
-        const remainEl = document.getElementById('show-remaining');
-        remainEl.innerText = remaining;
-        remainEl.style.color = remaining < 0 ? '#ff4d4f' : '#07c160';
+        let bmr = (10*w + 6.25*h - 5*a) + (user.gender==='male'?5:-161);
+        const target = Math.round(bmr * user.activity) + parseInt(user.goal);
+        const waterTarget = w * 35;
 
-        // 进度条
-        const pct = target > 0 ? Math.min((dietData.consumed / target) * 100, 100) : 0;
-        document.getElementById('progress-bar').style.width = pct + '%';
-        document.getElementById('progress-bar').style.backgroundColor = remaining < 0 ? '#ff4d4f' : '#07c160';
+        // 更新头部
+        document.getElementById('show-bmi').innerText = bmi;
+        document.getElementById('bmi-tag').innerText = bmiStatus;
 
-        // 渲染列表
+        // 更新热量条
+        const remaining = target - data.consumed;
+        document.getElementById('val-remaining').innerText = remaining;
+        document.getElementById('val-remaining').style.color = remaining < 0 ? '#f44336' : '#07c160';
+        
+        const calPct = Math.min((data.consumed/target)*100, 100);
+        document.getElementById('bar-cal').style.width = calPct + '%';
+        document.getElementById('bar-cal').style.background = remaining < 0 ? '#f44336' : '#07c160';
+
+        // 更新水条
+        document.getElementById('val-water').innerText = data.water;
+        const waterPct = Math.min((data.water/waterTarget)*100, 100);
+        document.getElementById('bar-water').style.width = waterPct + '%';
+
+        // 更新列表
         const list = document.getElementById('food-list');
         list.innerHTML = '';
-        dietData.foods.forEach(f => {
+        data.foods.forEach(f => {
             list.innerHTML += `
-                <div class="list-item">
+                <div class="food-item">
                     <span>${f.name}</span>
-                    <div style="display:flex; align-items:center;">
-                        <span style="font-weight:bold; margin-right:10px;">${f.cal}</span>
-                        <span class="del-btn" onclick="removeFood(${f.id})">×</span>
+                    <div style="display:flex; align-items:center">
+                        <strong>${f.cal}</strong>
+                        <span class="del-icon" onclick="removeFood(${f.id})">×</span>
                     </div>
-                </div>
-            `;
+                </div>`;
         });
+    }
+
+    function saveData() {
+        localStorage.setItem('fit_user_v7', JSON.stringify(user));
+        localStorage.setItem('fit_data_v7', JSON.stringify(data));
     }
 </script>
 </body>
